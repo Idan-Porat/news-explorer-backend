@@ -6,8 +6,8 @@ const { NODE_ENV, JWT_SECRET } = process.env;
 
 dotenv.config();
 
-const handleAuthError = () => {
-  throw new UnauthorizedError('Authorization Error');
+const handleAuthError = (res) => {
+  res.send(new UnauthorizedError('Authorization Error'));
 };
 
 const extractBearerToken = (header) => header.replace('Bearer ', '');
