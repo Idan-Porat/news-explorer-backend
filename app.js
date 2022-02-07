@@ -6,23 +6,26 @@ const bodyParser = require('body-parser');
 const { errors } = require('celebrate');
 const { celebrate } = require('celebrate');
 const Joi = require('joi');
+const { limiter } = require('./configuration/limiter');
 const auth = require('./middlewares/auth');
 const userRouter = require('./routes/user');
 const articleRouter = require('./routes/article');
 const { register, login } = require('./controllers/user');
 const { requestLogger, errorLogger } = require('./middlewares/logger');
-const NotFoundError = require('./errors/notFoundError');
-const ServerError = require('./errors/serverError');
+const { handleError } = require('./middlewares/errorHandler');
+const constants = require('./configuration/constants');
 
-const { PORT = 3000 } = process.env;
+const { PORT = constants.PORT_NUMBER } = process.env;
 const app = express();
+
+app.use(limiter);
 app.use(helmet());
 app.use(cors());
 app.options('*', cors());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 
-mongoose.connect('mongodb://localhost:27017/textFinalProject');
+mongoose.connect(constants.MONGO_ADDRESS);
 
 app.use(requestLogger);
 
@@ -48,17 +51,8 @@ app.use('/', auth, articleRouter);
 app.use(errorLogger); // enabling the error logger
 app.use(errors());
 
-app.use((req, res, next) => {
-  res.status(404).send(
-    new NotFoundError(`Route ${req.url} Not found.`),
-  );
-  next();
-});
-
 app.use((err, req, res, next) => {
-  res.status(500).send(
-    new ServerError('An error occurred on the server'),
-  );
+  handleError(err, res);
   next();
 });
 

@@ -1,14 +1,6 @@
-const Error = require('../middlewares/errorHandler');
+const { ErrorHandler } = require('../middlewares/errorHandler');
 
-class BadRequestError extends Error {
-  constructor(message) {
-    super(message);
-    this.statusCode = 400;
-  }
-
-  error() {
-    return `Error status: ${this.statusCode} and the reason is: ${this.message} `;
-  }
+class BadRequestError extends ErrorHandler {
 }
 
 module.exports = BadRequestError;

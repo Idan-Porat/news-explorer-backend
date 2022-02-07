@@ -2,15 +2,14 @@ const Article = require('../models/article');
 const NotFoundError = require('../errors/notFoundError');
 const BadRequestError = require('../errors/badRequestError');
 const UnauthorizedError = require('../errors/unauthorizedError');
-
-const STAT_CODE_200 = 200;
+const constants = require('../configuration/constants');
 
 module.exports.getArticles = (req, res, next) => Article.find({})
   .then((article) => {
     if (!article) {
-      throw new NotFoundError('No article found');
+      throw new NotFoundError(constants.ERR_CODE_401, constants.ERR_CODE_401_MESSAGE);
     }
-    res.status(STAT_CODE_200).send(article);
+    res.status(constants.STAT_CODE_200).send(article);
   })
   .catch(next);
 
@@ -37,7 +36,7 @@ module.exports.createArticle = (req, res, next) => {
     })
     .then((article) => {
       if (!article) {
-        throw new BadRequestError('Unsuccessful Request');
+        throw new BadRequestError(constants.ERR_CODE_400, constants.ERR_CODE_400_MESSAGE);
       }
       res.send({ article });
     })
@@ -45,13 +44,22 @@ module.exports.createArticle = (req, res, next) => {
 };
 
 module.exports.deleteArticle = (req, res, next) => {
+  const { _id } = req.user;
   const { articleId } = req.params;
-  return Article.findByIdAndRemove(articleId)
+
+  return Article.findById(articleId)
     .then((article) => {
       if (!article) {
-        throw new UnauthorizedError('No article found by this id');
+        throw new UnauthorizedError(constants.ERR_CODE_403, constants.ERR_CODE_403_MESSAGE);
       }
-      res.status(STAT_CODE_200).send(article);
+
+      if (_id !== article.owner.valueOf()) {
+        throw new UnauthorizedError(constants.ERR_CODE_403, constants.ERR_CODE_403_MESSAGE);
+      }
+      return Article.findByIdAndRemove(articleId)
+        .then((articleToDelete) => {
+          res.status(constants.STAT_CODE_200).send(articleToDelete);
+        });
     })
     .catch(next);
 };
